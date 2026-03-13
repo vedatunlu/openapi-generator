@@ -1,0 +1,12 @@
+generatorName: typescript-rtk-query
+outputDir: samples/client/petstore/typescript-rtk-query/builds/default
+inputSpec: modules/openapi-generator/src/test/resources/2_0/petstore.yaml
+templateDir: modules/openapi-generator/src/main/resources/typescript-rtk-query
+additionalProperties:
+  npmName: "@openapitools/typescript-rtk-query-petstore"
+  npmVersion: "1.0.0"
+  withReactHooks: "true"
+  supportsES6: "true"
+  addTagTypes: "true"
+  useSingleRequestParameter: "true"
+

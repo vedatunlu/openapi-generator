@@ -1,0 +1,226 @@
+/* tslint:disable */
+/* eslint-disable */
+{{>licenseInfo}}
+
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query{{#withReactHooks}}/react{{/withReactHooks}}';
+import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import * as runtime from '../runtime{{importFileExtension}}';
+{{#imports.0}}
+import type {
+    {{#imports}}
+    {{className}},
+    {{/imports}}
+} from '../models/index{{importFileExtension}}';
+import {
+    {{#imports}}
+    {{className}}FromJSON,
+    {{className}}ToJSON,
+    {{/imports}}
+} from '../models/index{{importFileExtension}}';
+{{/imports.0}}
+
+{{! ---- Per-endpoint request interfaces ---- }}
+{{#operations}}
+{{#operation}}
+{{#allParams.0}}
+export interface {{operationIdCamelCase}}Request {
+{{#allParams}}
+    {{paramName}}{{^required}}?{{/required}}: {{#isEnum}}{{{datatypeWithEnum}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}};
+{{/allParams}}
+}
+
+{{/allParams.0}}
+{{/operation}}
+{{/operations}}
+
+{{! ---- createApi slice ---- }}
+export const {{classname}} = createApi({
+    reducerPath: '{{reducerPath}}',
+    baseQuery: fetchBaseQuery({
+        baseUrl: runtime.BASE_PATH,
+        prepareHeaders: (headers, { getState }) => {
+            return runtime.prepareHeaders(headers);
+        },
+    }) as BaseQueryFn<FetchArgs, unknown, FetchBaseQueryError>,
+    {{#addTagTypes}}
+    tagTypes: [{{#tagTypes}}'{{.}}'{{^-last}}, {{/-last}}{{/tagTypes}}],
+    {{/addTagTypes}}
+    endpoints: (builder) => ({
+{{#operations}}
+{{#operation}}
+        /**
+         {{#notes}}
+         * {{&notes}}
+         {{/notes}}
+         {{#summary}}
+         * {{&summary}}
+         {{/summary}}
+         */
+        {{nickname}}: builder.{{#vendorExtensions.x-rtk-is-query}}query{{/vendorExtensions.x-rtk-is-query}}{{#vendorExtensions.x-rtk-is-mutation}}mutation{{/vendorExtensions.x-rtk-is-mutation}}<{{{returnType}}}{{^returnType}}void{{/returnType}}, {{#allParams.0}}{{operationIdCamelCase}}Request{{/allParams.0}}{{^allParams.0}}void{{/allParams.0}}>({
+            query: ({{#allParams.0}}{{#useSingleRequestParameter}}{ {{#allParams}}{{paramName}}{{^-last}}, {{/-last}}{{/allParams}} }{{/useSingleRequestParameter}}{{^useSingleRequestParameter}}requestParameters{{/useSingleRequestParameter}}{{/allParams.0}}) => {
+                {{#allParams}}
+                {{#required}}
+                if ({{paramName}} === null || {{paramName}} === undefined) {
+                    throw new runtime.RequiredError('{{paramName}}', 'Required parameter {{paramName}} was null or undefined when calling {{nickname}}.');
+                }
+                {{/required}}
+                {{/allParams}}
+                {{^useSingleRequestParameter}}
+                {{#allParams}}
+                const {{paramName}} = requestParameters.{{paramName}};
+                {{/allParams}}
+                {{/useSingleRequestParameter}}
+
+                {{#queryParams.0}}
+                const queryParameters: Record<string, any> = {};
+                {{#queryParams}}
+                {{#isArray}}
+                if ({{paramName}} !== undefined && {{paramName}} !== null) {
+                    {{#isCollectionFormatMulti}}
+                    queryParameters['{{baseName}}'] = {{paramName}};
+                    {{/isCollectionFormatMulti}}
+                    {{^isCollectionFormatMulti}}
+                    queryParameters['{{baseName}}'] = {{paramName}}?.join(runtime.COLLECTION_FORMATS["{{collectionFormat}}"]);
+                    {{/isCollectionFormatMulti}}
+                }
+                {{/isArray}}
+                {{^isArray}}
+                if ({{paramName}} !== undefined) {
+                    {{#isDateTime}}
+                    queryParameters['{{baseName}}'] = ({{paramName}} as any).toISOString();
+                    {{/isDateTime}}
+                    {{^isDateTime}}
+                    {{#isDate}}
+                    queryParameters['{{baseName}}'] = ({{paramName}} as any).toISOString().substring(0, 10);
+                    {{/isDate}}
+                    {{^isDate}}
+                    queryParameters['{{baseName}}'] = {{paramName}};
+                    {{/isDate}}
+                    {{/isDateTime}}
+                }
+                {{/isArray}}
+                {{/queryParams}}
+                {{/queryParams.0}}
+
+                const headerParameters: runtime.HttpHeaders = {};
+                {{#bodyParam}}
+                {{^consumes}}
+                headerParameters['Content-Type'] = 'application/json';
+                {{/consumes}}
+                {{#consumes.0}}
+                headerParameters['Content-Type'] = '{{{mediaType}}}';
+                {{/consumes.0}}
+                {{/bodyParam}}
+                {{#headerParams}}
+                if ({{paramName}} !== undefined && {{paramName}} !== null) {
+                    headerParameters['{{baseName}}'] = String({{paramName}});
+                }
+                {{/headerParams}}
+
+                {{#hasFormParams}}
+                const formData = new FormData();
+                {{#formParams}}
+                {{#isArray}}
+                if ({{paramName}}) {
+                    {{#isCollectionFormatMulti}}
+                    ({{paramName}} as any[]).forEach((element) => {
+                        formData.append('{{baseName}}', element as any);
+                    });
+                    {{/isCollectionFormatMulti}}
+                    {{^isCollectionFormatMulti}}
+                    formData.append('{{baseName}}', {{paramName}}?.join(runtime.COLLECTION_FORMATS["{{collectionFormat}}"]));
+                    {{/isCollectionFormatMulti}}
+                }
+                {{/isArray}}
+                {{^isArray}}
+                if ({{paramName}} !== undefined) {
+                    formData.append('{{baseName}}', {{paramName}} as any);
+                }
+                {{/isArray}}
+                {{/formParams}}
+                {{/hasFormParams}}
+
+                return {
+                    url: `{{{path}}}`{{#pathParams}}.replace('{{{baseName}}}', encodeURIComponent(String({{paramName}}))){{/pathParams}},
+                    method: '{{httpMethod}}',
+                    headers: headerParameters,
+                    {{#queryParams.0}}
+                    params: queryParameters,
+                    {{/queryParams.0}}
+                    {{#hasBodyParam}}
+                    {{#bodyParam}}
+                    {{#isContainer}}
+                    body: {{paramName}}{{#isArray}}{{#items}}{{^isPrimitiveType}}?.map({{datatype}}ToJSON){{/isPrimitiveType}}{{/items}}{{/isArray}},
+                    {{/isContainer}}
+                    {{^isContainer}}
+                    {{^isPrimitiveType}}
+                    body: {{dataType}}ToJSON({{paramName}}),
+                    {{/isPrimitiveType}}
+                    {{#isPrimitiveType}}
+                    body: {{paramName}} as any,
+                    {{/isPrimitiveType}}
+                    {{/isContainer}}
+                    {{/bodyParam}}
+                    {{/hasBodyParam}}
+                    {{^hasBodyParam}}
+                    {{#hasFormParams}}
+                    body: formData,
+                    {{/hasFormParams}}
+                    {{/hasBodyParam}}
+                };
+            },
+            {{#vendorExtensions.x-rtk-is-query}}
+            {{^returnTypeIsPrimitive}}
+            {{#returnType}}
+            transformResponse: (response: unknown) => {
+                {{#isArray}}
+                return (response as any[]).map({{returnBaseType}}FromJSON);
+                {{/isArray}}
+                {{^isArray}}
+                return {{returnBaseType}}FromJSON(response);
+                {{/isArray}}
+            },
+            {{/returnType}}
+            {{/returnTypeIsPrimitive}}
+            {{/vendorExtensions.x-rtk-is-query}}
+        }),
+{{/operation}}
+{{/operations}}
+    }),
+});
+
+{{! ---- Hook exports ---- }}
+{{#withReactHooks}}
+export const {
+{{#operations}}
+{{#operation}}
+    {{vendorExtensions.x-rtk-hook-name}},
+{{/operation}}
+{{/operations}}
+} = {{classname}};
+{{/withReactHooks}}
+
+{{! ---- Enum exports ---- }}
+{{#hasEnums}}
+{{#operations}}
+{{#operation}}
+{{#allParams}}
+{{#isEnum}}
+/**
+ * @export
+ * @enum {string}
+ */
+export enum {{operationIdCamelCase}}{{enumName}} {
+{{#allowableValues}}
+{{#enumVars}}
+    {{{name}}} = {{{value}}}{{^-last}},{{/-last}}
+{{/enumVars}}
+{{/allowableValues}}
+}
+{{/isEnum}}
+{{/allParams}}
+{{/operation}}
+{{/operations}}
+{{/hasEnums}}
+
+

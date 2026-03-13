@@ -1,0 +1,38 @@
+/* tslint:disable */
+/* eslint-disable */
+{{>licenseInfo}}
+
+import { configureStore } from '@reduxjs/toolkit';
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+import { {{classname}}Api } from './apis/{{classFilename}}';
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+
+export const store = configureStore({
+    reducer: {
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+        [{{classname}}.reducerPath]: {{classname}}.reducer,
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+    },
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware()
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+            .concat({{classname}}.middleware)
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+    ,
+});
+
+export type RootState  = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
+

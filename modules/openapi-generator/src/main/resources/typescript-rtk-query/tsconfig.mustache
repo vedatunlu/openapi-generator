@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "target": "{{#supportsES6}}ES2020{{/supportsES6}}{{^supportsES6}}ES5{{/supportsES6}}",
+    "module": "{{#supportsES6}}ES2020{{/supportsES6}}{{^supportsES6}}commonjs{{/supportsES6}}",
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": [
+      "{{#supportsES6}}ES2020{{/supportsES6}}{{^supportsES6}}ES6{{/supportsES6}}",
+      "dom"
+    ],
+    "typeRoots": [
+      "node_modules/@types"
+    ]
+  },
+  "include": ["src"],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ]
+}
+

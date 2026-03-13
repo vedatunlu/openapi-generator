@@ -1,0 +1,159 @@
+import { exists, mapValues } from '../runtime';
+{{#hasImports}}
+import type {
+    {{#imports}}
+    {{{.}}},
+    {{/imports}}
+} from './';
+import {
+    {{#imports}}
+    {{{.}}}FromJSON,
+    {{{.}}}ToJSON,
+    {{/imports}}
+} from './';
+{{/hasImports}}
+
+/**
+ * {{{description}}}
+ * @export
+ * @interface {{classname}}
+ */
+export interface {{classname}} {{#allParents.0}}extends {{#allParents}}{{{.}}}{{^-last}}, {{/-last}}{{/allParents}}{{/allParents.0}} {
+{{#additionalPropertiesType}}
+    [key: string]: {{{additionalPropertiesType}}}{{#hasVars}} | any{{/hasVars}};
+{{/additionalPropertiesType}}
+{{#vars}}
+    /**
+     * {{{description}}}
+     * @type {{=<% %>=}}{<%&datatype%>}<%={{ }}=%>
+     * @memberof {{classname}}
+     */
+    {{#isReadOnly}}readonly {{/isReadOnly}}{{name}}{{^required}}?{{/required}}: {{#isEnum}}{{{datatypeWithEnum}}}{{/isEnum}}{{^isEnum}}{{{datatype}}}{{/isEnum}};
+{{/vars}}
+}
+
+export function {{classname}}FromJSON(json: any): {{classname}} {
+    return {{classname}}FromJSONTyped(json, false);
+}
+
+export function {{classname}}FromJSONTyped(json: any, ignoreDiscriminator: boolean): {{classname}} {
+    {{#hasVars}}
+    if (json === undefined || json === null) {
+        return json;
+    }
+    return {
+        {{#allParents}}
+        ...{{.}}FromJSONTyped(json, ignoreDiscriminator),
+        {{/allParents}}
+        {{#additionalPropertiesType}}
+        ...json,
+        {{/additionalPropertiesType}}
+        {{#vars}}
+        {{#isPrimitiveType}}
+        {{#isDate}}
+        '{{name}}': {{^required}}!exists(json, '{{baseName}}') ? undefined : {{/required}}new Date(json['{{baseName}}']),
+        {{/isDate}}
+        {{#isDateTime}}
+        '{{name}}': {{^required}}!exists(json, '{{baseName}}') ? undefined : {{/required}}new Date(json['{{baseName}}']),
+        {{/isDateTime}}
+        {{^isDate}}
+        {{^isDateTime}}
+        '{{name}}': {{^required}}!exists(json, '{{baseName}}') ? undefined : {{/required}}json['{{baseName}}'],
+        {{/isDateTime}}
+        {{/isDate}}
+        {{/isPrimitiveType}}
+        {{^isPrimitiveType}}
+        {{#isContainer}}
+        {{#isArray}}
+        {{#items}}
+        {{#isPrimitiveType}}
+        '{{name}}': {{^required}}!exists(json, '{{baseName}}') ? undefined : {{/required}}json['{{baseName}}'],
+        {{/isPrimitiveType}}
+        {{^isPrimitiveType}}
+        '{{name}}': {{^required}}!exists(json, '{{baseName}}') ? undefined : {{/required}}(json['{{baseName}}'] as Array<any>).map({{datatype}}FromJSON),
+        {{/isPrimitiveType}}
+        {{/items}}
+        {{/isArray}}
+        {{^isArray}}
+        '{{name}}': {{^required}}!exists(json, '{{baseName}}') ? undefined : {{/required}}mapValues(json['{{baseName}}'], {{#items}}{{datatype}}{{/items}}FromJSON),
+        {{/isArray}}
+        {{/isContainer}}
+        {{^isContainer}}
+        '{{name}}': {{^required}}!exists(json, '{{baseName}}') ? undefined : {{/required}}{{datatype}}FromJSON(json['{{baseName}}']),
+        {{/isContainer}}
+        {{/isPrimitiveType}}
+        {{/vars}}
+    };
+    {{/hasVars}}
+    {{^hasVars}}
+    return {};
+    {{/hasVars}}
+}
+
+export function {{classname}}ToJSON(value?: {{classname}} | null): any {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
+    }
+    return {
+        {{#allParents}}
+        ...{{.}}ToJSON(value),
+        {{/allParents}}
+        {{#vars}}
+        {{^isReadOnly}}
+        {{#isPrimitiveType}}
+        {{#isDate}}
+        '{{baseName}}': {{^required}}value.{{name}} === undefined ? undefined : {{/required}}(value.{{name}} as any).toISOString().substring(0, 10),
+        {{/isDate}}
+        {{#isDateTime}}
+        '{{baseName}}': {{^required}}value.{{name}} === undefined ? undefined : {{/required}}(value.{{name}} as any).toISOString(),
+        {{/isDateTime}}
+        {{^isDate}}
+        {{^isDateTime}}
+        '{{baseName}}': value.{{name}},
+        {{/isDateTime}}
+        {{/isDate}}
+        {{/isPrimitiveType}}
+        {{^isPrimitiveType}}
+        {{#isContainer}}
+        {{#isArray}}
+        {{#items}}
+        {{#isPrimitiveType}}
+        '{{baseName}}': value.{{name}},
+        {{/isPrimitiveType}}
+        {{^isPrimitiveType}}
+        '{{baseName}}': {{^required}}value.{{name}} === undefined ? undefined : {{/required}}(value.{{name}} as Array<any>).map({{datatype}}ToJSON),
+        {{/isPrimitiveType}}
+        {{/items}}
+        {{/isArray}}
+        {{^isArray}}
+        '{{baseName}}': {{^required}}value.{{name}} === undefined ? undefined : {{/required}}mapValues(value.{{name}}, {{#items}}{{datatype}}{{/items}}ToJSON),
+        {{/isArray}}
+        {{/isContainer}}
+        {{^isContainer}}
+        '{{baseName}}': {{^required}}value.{{name}} === undefined ? undefined : {{/required}}{{datatype}}ToJSON(value.{{name}}),
+        {{/isContainer}}
+        {{/isPrimitiveType}}
+        {{/isReadOnly}}
+        {{/vars}}
+    };
+}
+
+{{#vars}}
+{{#isEnum}}
+/**
+ * @export
+ * @enum {string}
+ */
+export enum {{classname}}{{enumName}} {
+{{#allowableValues}}
+{{#enumVars}}
+    {{{name}}} = {{{value}}}{{^-last}},{{/-last}}
+{{/enumVars}}
+{{/allowableValues}}
+}
+{{/isEnum}}
+{{/vars}}
+

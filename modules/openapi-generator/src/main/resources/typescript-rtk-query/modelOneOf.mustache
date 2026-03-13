@@ -1,0 +1,72 @@
+{{#hasImports}}
+import type {
+    {{#imports}}
+    {{{.}}},
+    {{/imports}}
+} from './';
+import {
+    {{#imports}}
+    {{{.}}}FromJSON,
+    {{{.}}}ToJSON,
+    {{/imports}}
+} from './';
+{{/hasImports}}
+
+/**
+ * @type {{classname}}{{#description}}
+ * {{{.}}}{{/description}}
+ * @export
+ */
+export type {{classname}} = {{#oneOf}}{{{.}}}{{^-last}} | {{/-last}}{{/oneOf}};
+
+{{#discriminator}}
+export function {{classname}}FromJSON(json: any): {{classname}} {
+    return {{classname}}FromJSONTyped(json, false);
+}
+
+export function {{classname}}FromJSONTyped(json: any, ignoreDiscriminator: boolean): {{classname}} {
+    if (json === undefined || json === null) {
+        return json;
+    }
+    switch (json['{{propertyName}}']) {
+    {{#mappedModels}}
+        case '{{mappingName}}':
+            return {{modelName}}FromJSONTyped(json, true);
+    {{/mappedModels}}
+        default:
+            throw new Error(`No variant of {{classname}} exists with '{{propertyName}}' == '${json['{{propertyName}}']}'`);
+    }
+}
+
+export function {{classname}}ToJSON(value?: {{classname}} | null): any {
+    if (value === undefined) { return undefined; }
+    if (value === null)      { return null; }
+    {{#hasVars}}
+    switch (value['{{propertyName}}']) {
+    {{#mappedModels}}
+        case '{{mappingName}}':
+            return {{modelName}}ToJSON(value as {{modelName}});
+    {{/mappedModels}}
+        default:
+            throw new Error(`No variant of {{classname}} exists with '{{propertyName}}' == '${value['{{propertyName}}']}'`);
+    }
+    {{/hasVars}}
+    {{^hasVars}}
+    return value;
+    {{/hasVars}}
+}
+{{/discriminator}}
+{{^discriminator}}
+export function {{classname}}FromJSON(json: any): {{classname}} {
+    return json;
+}
+
+export function {{classname}}FromJSONTyped(json: any, ignoreDiscriminator: boolean): {{classname}} {
+    return json;
+}
+
+export function {{classname}}ToJSON(value?: {{classname}} | null): any {
+    return value;
+}
+{{/discriminator}}
+
