@@ -73,7 +73,7 @@ export const PetApi = createApi({
             return runtime.prepareHeaders(headers);
         },
     }) as BaseQueryFn<FetchArgs, unknown, FetchBaseQueryError>,
-    tagTypes: ['Pet'],
+    tagTypes: ['Pet', 'UNKNOWN_ERROR'],
     endpoints: (builder) => ({
         /**
          * Add a new pet to the store
@@ -96,6 +96,10 @@ export const PetApi = createApi({
                     body: PetToJSON(body),
                 };
             },
+            invalidatesTags: (result) =>
+                result
+                    ? ['Pet']
+                    : [],
         }),
         /**
          * Deletes a pet
@@ -119,6 +123,10 @@ export const PetApi = createApi({
                     headers: headerParameters,
                 };
             },
+            invalidatesTags: (result, error, { petId }) =>
+                result
+                    ? [{ type: 'Pet' as const, id: petId }, 'Pet']
+                    : [],
         }),
         /**
          * Multiple status values can be provided with comma separated strings
@@ -148,6 +156,10 @@ export const PetApi = createApi({
             transformResponse: (response: unknown) => {
                 return (response as any[]).map(PetFromJSON);
             },
+            providesTags: (result) =>
+                result
+                    ? ['Pet']
+                    : ['UNKNOWN_ERROR'],
         }),
         /**
          * Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing.
@@ -177,6 +189,10 @@ export const PetApi = createApi({
             transformResponse: (response: unknown) => {
                 return (response as any[]).map(PetFromJSON);
             },
+            providesTags: (result) =>
+                result
+                    ? ['Pet']
+                    : ['UNKNOWN_ERROR'],
         }),
         /**
          * Returns a single pet
@@ -201,6 +217,10 @@ export const PetApi = createApi({
             transformResponse: (response: unknown) => {
                 return PetFromJSON(response);
             },
+            providesTags: (result, error, { petId }) =>
+                result
+                    ? [{ type: 'Pet' as const, id: petId }]
+                    : ['UNKNOWN_ERROR'],
         }),
         /**
          * Update an existing pet
@@ -223,6 +243,10 @@ export const PetApi = createApi({
                     body: PetToJSON(body),
                 };
             },
+            invalidatesTags: (result) =>
+                result
+                    ? ['Pet']
+                    : [],
         }),
         /**
          * Updates a pet in the store with form data
@@ -251,6 +275,10 @@ export const PetApi = createApi({
                     body: formData,
                 };
             },
+            invalidatesTags: (result, error, { petId }) =>
+                result
+                    ? [{ type: 'Pet' as const, id: petId }, 'Pet']
+                    : [],
         }),
         /**
          * uploads an image
@@ -279,6 +307,10 @@ export const PetApi = createApi({
                     body: formData,
                 };
             },
+            invalidatesTags: (result, error, { petId }) =>
+                result
+                    ? [{ type: 'Pet' as const, id: petId }, 'Pet']
+                    : [],
         }),
     }),
 });

@@ -43,7 +43,7 @@ export const {{classname}} = createApi({
         },
     }) as BaseQueryFn<FetchArgs, unknown, FetchBaseQueryError>,
     {{#addTagTypes}}
-    tagTypes: [{{#tagTypes}}'{{.}}'{{^-last}}, {{/-last}}{{/tagTypes}}],
+    tagTypes: [{{#tagTypes}}'{{.}}'{{^-last}}, {{/-last}}{{/tagTypes}}, 'UNKNOWN_ERROR'],
     {{/addTagTypes}}
     endpoints: (builder) => ({
 {{#operations}}
@@ -182,7 +182,37 @@ export const {{classname}} = createApi({
             },
             {{/returnType}}
             {{/returnTypeIsPrimitive}}
+            {{#addTagTypes}}
+            {{#pathParams.0}}
+            providesTags: (result, error, {{#useSingleRequestParameter}}{ {{#pathParams}}{{#-last}}{{paramName}}{{/-last}}{{/pathParams}} }{{/useSingleRequestParameter}}{{^useSingleRequestParameter}}arg{{/useSingleRequestParameter}}) =>
+                result
+                    ? [{ type: '{{#tagTypes}}{{.}}{{/tagTypes}}' as const, id: {{#useSingleRequestParameter}}{{#pathParams}}{{#-last}}{{paramName}}{{/-last}}{{/pathParams}}{{/useSingleRequestParameter}}{{^useSingleRequestParameter}}arg.{{#pathParams}}{{#-last}}{{paramName}}{{/-last}}{{/pathParams}}{{/useSingleRequestParameter}} }]
+                    : ['UNKNOWN_ERROR'],
+            {{/pathParams.0}}
+            {{^pathParams.0}}
+            providesTags: (result) =>
+                result
+                    ? ['{{#tagTypes}}{{.}}{{/tagTypes}}']
+                    : ['UNKNOWN_ERROR'],
+            {{/pathParams.0}}
+            {{/addTagTypes}}
             {{/vendorExtensions.x-rtk-is-query}}
+            {{#vendorExtensions.x-rtk-is-mutation}}
+            {{#addTagTypes}}
+            {{#pathParams.0}}
+            invalidatesTags: (result, error, {{#useSingleRequestParameter}}{ {{#pathParams}}{{#-last}}{{paramName}}{{/-last}}{{/pathParams}} }{{/useSingleRequestParameter}}{{^useSingleRequestParameter}}arg{{/useSingleRequestParameter}}) =>
+                result
+                    ? [{ type: '{{#tagTypes}}{{.}}{{/tagTypes}}' as const, id: {{#useSingleRequestParameter}}{{#pathParams}}{{#-last}}{{paramName}}{{/-last}}{{/pathParams}}{{/useSingleRequestParameter}}{{^useSingleRequestParameter}}arg.{{#pathParams}}{{#-last}}{{paramName}}{{/-last}}{{/pathParams}}{{/useSingleRequestParameter}} }, '{{#tagTypes}}{{.}}{{/tagTypes}}']
+                    : [],
+            {{/pathParams.0}}
+            {{^pathParams.0}}
+            invalidatesTags: (result) =>
+                result
+                    ? ['{{#tagTypes}}{{.}}{{/tagTypes}}']
+                    : [],
+            {{/pathParams.0}}
+            {{/addTagTypes}}
+            {{/vendorExtensions.x-rtk-is-mutation}}
         }),
 {{/operation}}
 {{/operations}}

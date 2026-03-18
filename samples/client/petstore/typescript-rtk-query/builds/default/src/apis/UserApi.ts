@@ -63,7 +63,7 @@ export const UserApi = createApi({
             return runtime.prepareHeaders(headers);
         },
     }) as BaseQueryFn<FetchArgs, unknown, FetchBaseQueryError>,
-    tagTypes: ['User'],
+    tagTypes: ['User', 'UNKNOWN_ERROR'],
     endpoints: (builder) => ({
         /**
          * This can only be done by the logged in user.
@@ -87,6 +87,10 @@ export const UserApi = createApi({
                     body: UserToJSON(body),
                 };
             },
+            invalidatesTags: (result) =>
+                result
+                    ? ['User']
+                    : [],
         }),
         /**
          * Creates list of users with given input array
@@ -109,6 +113,10 @@ export const UserApi = createApi({
                     body: body?.map(UserToJSON),
                 };
             },
+            invalidatesTags: (result) =>
+                result
+                    ? ['User']
+                    : [],
         }),
         /**
          * Creates list of users with given input array
@@ -131,6 +139,10 @@ export const UserApi = createApi({
                     body: body?.map(UserToJSON),
                 };
             },
+            invalidatesTags: (result) =>
+                result
+                    ? ['User']
+                    : [],
         }),
         /**
          * This can only be done by the logged in user.
@@ -152,6 +164,10 @@ export const UserApi = createApi({
                     headers: headerParameters,
                 };
             },
+            invalidatesTags: (result, error, { username }) =>
+                result
+                    ? [{ type: 'User' as const, id: username }, 'User']
+                    : [],
         }),
         /**
          * Get user by user name
@@ -175,6 +191,10 @@ export const UserApi = createApi({
             transformResponse: (response: unknown) => {
                 return UserFromJSON(response);
             },
+            providesTags: (result, error, { username }) =>
+                result
+                    ? [{ type: 'User' as const, id: username }]
+                    : ['UNKNOWN_ERROR'],
         }),
         /**
          * Logs user into the system
@@ -206,6 +226,10 @@ export const UserApi = createApi({
                     params: queryParameters,
                 };
             },
+            providesTags: (result) =>
+                result
+                    ? ['User']
+                    : ['UNKNOWN_ERROR'],
         }),
         /**
          * Logs out current logged in user session
@@ -223,6 +247,10 @@ export const UserApi = createApi({
                     headers: headerParameters,
                 };
             },
+            providesTags: (result) =>
+                result
+                    ? ['User']
+                    : ['UNKNOWN_ERROR'],
         }),
         /**
          * This can only be done by the logged in user.
@@ -249,6 +277,10 @@ export const UserApi = createApi({
                     body: UserToJSON(body),
                 };
             },
+            invalidatesTags: (result, error, { username }) =>
+                result
+                    ? [{ type: 'User' as const, id: username }, 'User']
+                    : [],
         }),
     }),
 });

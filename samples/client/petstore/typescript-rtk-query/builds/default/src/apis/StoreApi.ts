@@ -45,7 +45,7 @@ export const StoreApi = createApi({
             return runtime.prepareHeaders(headers);
         },
     }) as BaseQueryFn<FetchArgs, unknown, FetchBaseQueryError>,
-    tagTypes: ['Store'],
+    tagTypes: ['Store', 'UNKNOWN_ERROR'],
     endpoints: (builder) => ({
         /**
          * For valid response try integer IDs with value < 1000. Anything above 1000 or nonintegers will generate API errors
@@ -67,6 +67,10 @@ export const StoreApi = createApi({
                     headers: headerParameters,
                 };
             },
+            invalidatesTags: (result, error, { orderId }) =>
+                result
+                    ? [{ type: 'Store' as const, id: orderId }, 'Store']
+                    : [],
         }),
         /**
          * Returns a map of status codes to quantities
@@ -85,6 +89,10 @@ export const StoreApi = createApi({
                     headers: headerParameters,
                 };
             },
+            providesTags: (result) =>
+                result
+                    ? ['Store']
+                    : ['UNKNOWN_ERROR'],
         }),
         /**
          * For valid response try integer IDs with value <= 5 or > 10. Other values will generate exceptions
@@ -109,6 +117,10 @@ export const StoreApi = createApi({
             transformResponse: (response: unknown) => {
                 return OrderFromJSON(response);
             },
+            providesTags: (result, error, { orderId }) =>
+                result
+                    ? [{ type: 'Store' as const, id: orderId }]
+                    : ['UNKNOWN_ERROR'],
         }),
         /**
          * Place an order for a pet
@@ -131,6 +143,10 @@ export const StoreApi = createApi({
                     body: OrderToJSON(body),
                 };
             },
+            invalidatesTags: (result) =>
+                result
+                    ? ['Store']
+                    : [],
         }),
     }),
 });
