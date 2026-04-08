@@ -12,11 +12,7 @@
  * Do not edit the class manually.
  */
 
-
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import * as runtime from '../runtime';
-import { Configuration, DefaultConfig } from '../runtime';
 import type {
     User,
 } from '../models/index';
@@ -24,6 +20,7 @@ import {
     UserFromJSON,
     UserToJSON,
 } from '../models/index';
+import { api } from './index';
 
 export interface CreateUserRequest {
     body: User;
@@ -56,35 +53,7 @@ export interface UpdateUserRequest {
 }
 
 
-const userApiBaseQuery: BaseQueryFn<FetchArgs, unknown, FetchBaseQueryError> = async (args: FetchArgs, api: any, extraOptions: { configuration?: Configuration }) => {
-    const configuration = extraOptions?.configuration || DefaultConfig;
-    const rawBaseQuery = fetchBaseQuery({
-        baseUrl: configuration.basePath,
-        prepareHeaders: (headers) => {
-            if (configuration.username !== undefined || configuration.password !== undefined) {
-                headers.set('Authorization', 'Basic ' + btoa(configuration.username + ':' + configuration.password));
-            }
-            if (configuration.accessToken) {
-                headers.set('Authorization', `Bearer ${configuration.accessToken()}`);
-            }
-            if (configuration.apiKey) {
-                headers.set('api_key', configuration.apiKey('api_key'));
-            }
-            if (configuration.headers) {
-                Object.entries(configuration.headers).forEach(([key, value]) => {
-                    headers.set(key, value);
-                });
-            }
-            return headers;
-        },
-    });
-    return rawBaseQuery(args, api, extraOptions);
-};
-
-export const UserApi = createApi({
-    reducerPath: 'userApi',
-    baseQuery: userApiBaseQuery,
-    tagTypes: ['User'],
+const injectedApi = api.injectEndpoints({
     endpoints: (builder) => ({
         /**
          * This can only be done by the logged in user.
@@ -254,4 +223,4 @@ export const {
     useLoginUserQuery,
     useLogoutUserQuery,
     useUpdateUserMutation,
-} = UserApi;
+} = injectedApi;

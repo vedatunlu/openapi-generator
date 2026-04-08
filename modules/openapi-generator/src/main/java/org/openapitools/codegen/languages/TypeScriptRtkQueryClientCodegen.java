@@ -37,9 +37,7 @@ import static org.openapitools.codegen.utils.StringUtils.camelize;
 
 /**
  * Generates a TypeScript client library using Redux Toolkit Query (RTK Query).
- *
- * <p>Each OpenAPI tag is turned into a {@code createApi()} slice. Endpoints are
- * typed as {@code builder.query} (GET / HEAD) or {@code builder.mutation}
+ * Endpoints are typed as {@code builder.query} (GET / HEAD) or {@code builder.mutation}
  * (POST / PUT / PATCH / DELETE). React hooks are exported by default.</p>
  */
 public class TypeScriptRtkQueryClientCodegen extends AbstractTypeScriptClientCodegen {

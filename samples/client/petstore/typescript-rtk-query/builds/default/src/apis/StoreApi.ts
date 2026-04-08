@@ -12,11 +12,7 @@
  * Do not edit the class manually.
  */
 
-
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import * as runtime from '../runtime';
-import { Configuration, DefaultConfig } from '../runtime';
 import type {
     Order,
 } from '../models/index';
@@ -24,6 +20,7 @@ import {
     OrderFromJSON,
     OrderToJSON,
 } from '../models/index';
+import { api } from './index';
 
 export interface DeleteOrderRequest {
     orderId: string;
@@ -38,35 +35,7 @@ export interface PlaceOrderRequest {
 }
 
 
-const storeApiBaseQuery: BaseQueryFn<FetchArgs, unknown, FetchBaseQueryError> = async (args: FetchArgs, api: any, extraOptions: { configuration?: Configuration }) => {
-    const configuration = extraOptions?.configuration || DefaultConfig;
-    const rawBaseQuery = fetchBaseQuery({
-        baseUrl: configuration.basePath,
-        prepareHeaders: (headers) => {
-            if (configuration.username !== undefined || configuration.password !== undefined) {
-                headers.set('Authorization', 'Basic ' + btoa(configuration.username + ':' + configuration.password));
-            }
-            if (configuration.accessToken) {
-                headers.set('Authorization', `Bearer ${configuration.accessToken()}`);
-            }
-            if (configuration.apiKey) {
-                headers.set('api_key', configuration.apiKey('api_key'));
-            }
-            if (configuration.headers) {
-                Object.entries(configuration.headers).forEach(([key, value]) => {
-                    headers.set(key, value);
-                });
-            }
-            return headers;
-        },
-    });
-    return rawBaseQuery(args, api, extraOptions);
-};
-
-export const StoreApi = createApi({
-    reducerPath: 'storeApi',
-    baseQuery: storeApiBaseQuery,
-    tagTypes: ['Store'],
+const injectedApi = api.injectEndpoints({
     endpoints: (builder) => ({
         /**
          * For valid response try integer IDs with value < 1000. Anything above 1000 or nonintegers will generate API errors
@@ -149,4 +118,4 @@ export const {
     useGetInventoryQuery,
     useGetOrderByIdQuery,
     usePlaceOrderMutation,
-} = StoreApi;
+} = injectedApi;

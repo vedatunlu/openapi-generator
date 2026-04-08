@@ -2,10 +2,7 @@
 /* eslint-disable */
 {{>licenseInfo}}
 
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query{{#withReactHooks}}/react{{/withReactHooks}}';
-import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import * as runtime from '../runtime{{importFileExtension}}';
-import { Configuration, DefaultConfig } from '../runtime{{importFileExtension}}';
 {{#imports.0}}
 import type {
     {{#imports}}
@@ -19,6 +16,7 @@ import {
     {{/imports}}
 } from '../models/index{{importFileExtension}}';
 {{/imports.0}}
+import { api } from './index{{importFileExtension}}';
 
 {{! ---- Per-endpoint request interfaces ---- }}
 {{#operations}}
@@ -34,41 +32,7 @@ export interface {{operationIdCamelCase}}Request {
 {{/operation}}
 {{/operations}}
 
-{{! ---- Custom baseQuery with auth ---- }}
-const {{reducerPath}}BaseQuery: BaseQueryFn<FetchArgs, unknown, FetchBaseQueryError> = async (args: FetchArgs, api: any, extraOptions: { configuration?: Configuration }) => {
-    const configuration = extraOptions?.configuration || DefaultConfig;
-    const rawBaseQuery = fetchBaseQuery({
-        baseUrl: configuration.basePath,
-        prepareHeaders: (headers) => {
-            {{#hasAuthMethods}}
-            if (configuration.username !== undefined || configuration.password !== undefined) {
-                headers.set('Authorization', 'Basic ' + btoa(configuration.username + ':' + configuration.password));
-            }
-            if (configuration.accessToken) {
-                headers.set('Authorization', `Bearer ${configuration.accessToken()}`);
-            }
-            if (configuration.apiKey) {
-                headers.set('api_key', configuration.apiKey('api_key'));
-            }
-            {{/hasAuthMethods}}
-            if (configuration.headers) {
-                Object.entries(configuration.headers).forEach(([key, value]) => {
-                    headers.set(key, value);
-                });
-            }
-            return headers;
-        },
-    });
-    return rawBaseQuery(args, api, extraOptions);
-};
-
-{{! ---- createApi slice ---- }}
-export const {{classname}} = createApi({
-    reducerPath: '{{reducerPath}}',
-    baseQuery: {{reducerPath}}BaseQuery,
-    {{#addTagTypes}}
-    tagTypes: [{{#tagTypes}}'{{.}}'{{^-last}}, {{/-last}}{{/tagTypes}}],
-    {{/addTagTypes}}
+const injectedApi = api.injectEndpoints({
     endpoints: (builder) => ({
 {{#operations}}
 {{#operation}}
@@ -210,7 +174,7 @@ export const {
     {{vendorExtensions.x-rtk-hook-name}},
 {{/operation}}
 {{/operations}}
-} = {{classname}};
+} = injectedApi;
 {{/withReactHooks}}
 
 {{! ---- Enum exports ---- }}
@@ -235,4 +199,3 @@ export enum {{operationIdCamelCase}}{{enumName}} {
 {{/operation}}
 {{/operations}}
 {{/hasEnums}}
-

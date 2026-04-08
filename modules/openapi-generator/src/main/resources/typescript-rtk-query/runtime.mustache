@@ -34,7 +34,7 @@ export interface ConfigurationParameters {
 export class Configuration {
     constructor(private configuration: ConfigurationParameters = {}) {}
 
-    set config(configuration: Configuration) {
+    set config(configuration: ConfigurationParameters) {
         this.configuration = configuration;
     }
 
