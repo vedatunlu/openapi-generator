@@ -5,6 +5,8 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query{{#withReactHooks}}/react{{/withReactHooks}}';
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import * as runtime from '../runtime{{importFileExtension}}';
+import type { BffErrorResponse } from '../runtime{{importFileExtension}}';
+import { Configuration, DefaultConfig } from '../runtime{{importFileExtension}}';
 {{#imports.0}}
 import type {
     {{#imports}}
@@ -33,17 +35,44 @@ export interface {{operationIdCamelCase}}Request {
 {{/operation}}
 {{/operations}}
 
+{{! ---- Custom baseQuery with auth and BFF error handling ---- }}
+const {{reducerPath}}BaseQuery: BaseQueryFn<FetchArgs, unknown, FetchBaseQueryError | BffErrorResponse> = async (args: FetchArgs, api: any, extraOptions: { configuration?: Configuration }) => {
+    const configuration = extraOptions?.configuration || DefaultConfig;
+    const rawBaseQuery = fetchBaseQuery({
+        baseUrl: configuration.basePath,
+        prepareHeaders: (headers) => {
+            {{#hasAuthMethods}}
+            if (configuration.username !== undefined || configuration.password !== undefined) {
+                headers.set('Authorization', 'Basic ' + btoa(configuration.username + ':' + configuration.password));
+            }
+            if (configuration.accessToken) {
+                headers.set('Authorization', `Bearer ${configuration.accessToken()}`);
+            }
+            if (configuration.apiKey) {
+                headers.set('api_key', configuration.apiKey('api_key'));
+            }
+            {{/hasAuthMethods}}
+            if (configuration.headers) {
+                Object.entries(configuration.headers).forEach(([key, value]) => {
+                    headers.set(key, value);
+                });
+            }
+            return headers;
+        },
+    });
+    const result = await rawBaseQuery(args, api, extraOptions);
+    if (result.data && runtime.isBffError(result.data)) {
+        return { error: result.data as BffErrorResponse };
+    }
+    return result;
+};
+
 {{! ---- createApi slice ---- }}
 export const {{classname}} = createApi({
     reducerPath: '{{reducerPath}}',
-    baseQuery: fetchBaseQuery({
-        baseUrl: runtime.BASE_PATH,
-        prepareHeaders: (headers, { getState }) => {
-            return runtime.prepareHeaders(headers);
-        },
-    }) as BaseQueryFn<FetchArgs, unknown, FetchBaseQueryError>,
+    baseQuery: {{reducerPath}}BaseQuery,
     {{#addTagTypes}}
-    tagTypes: [{{#tagTypes}}'{{.}}'{{^-last}}, {{/-last}}{{/tagTypes}}, 'UNKNOWN_ERROR'],
+    tagTypes: [{{#tagTypes}}'{{.}}'{{^-last}}, {{/-last}}{{/tagTypes}}],
     {{/addTagTypes}}
     endpoints: (builder) => ({
 {{#operations}}
@@ -58,13 +87,6 @@ export const {{classname}} = createApi({
          */
         {{nickname}}: builder.{{#vendorExtensions.x-rtk-is-query}}query{{/vendorExtensions.x-rtk-is-query}}{{#vendorExtensions.x-rtk-is-mutation}}mutation{{/vendorExtensions.x-rtk-is-mutation}}<{{{returnType}}}{{^returnType}}void{{/returnType}}, {{#allParams.0}}{{operationIdCamelCase}}Request{{/allParams.0}}{{^allParams.0}}void{{/allParams.0}}>({
             query: ({{#allParams.0}}{{#useSingleRequestParameter}}{ {{#allParams}}{{paramName}}{{^-last}}, {{/-last}}{{/allParams}} }{{/useSingleRequestParameter}}{{^useSingleRequestParameter}}requestParameters{{/useSingleRequestParameter}}{{/allParams.0}}) => {
-                {{#allParams}}
-                {{#required}}
-                if ({{paramName}} === null || {{paramName}} === undefined) {
-                    throw new runtime.RequiredError('{{paramName}}', 'Required parameter {{paramName}} was null or undefined when calling {{nickname}}.');
-                }
-                {{/required}}
-                {{/allParams}}
                 {{^useSingleRequestParameter}}
                 {{#allParams}}
                 const {{paramName}} = requestParameters.{{paramName}};
@@ -170,47 +192,13 @@ export const {{classname}} = createApi({
                 };
             },
             {{#vendorExtensions.x-rtk-is-query}}
-            {{^returnTypeIsPrimitive}}
-            {{#returnType}}
-            transformResponse: (response: unknown) => {
-                {{#isArray}}
-                return (response as any[]).map({{returnBaseType}}FromJSON);
-                {{/isArray}}
-                {{^isArray}}
-                return {{returnBaseType}}FromJSON(response);
-                {{/isArray}}
-            },
-            {{/returnType}}
-            {{/returnTypeIsPrimitive}}
             {{#addTagTypes}}
-            {{#pathParams.0}}
-            providesTags: (result, error, {{#useSingleRequestParameter}}{ {{#pathParams}}{{#-last}}{{paramName}}{{/-last}}{{/pathParams}} }{{/useSingleRequestParameter}}{{^useSingleRequestParameter}}arg{{/useSingleRequestParameter}}) =>
-                result
-                    ? [{ type: '{{#tagTypes}}{{.}}{{/tagTypes}}' as const, id: {{#useSingleRequestParameter}}{{#pathParams}}{{#-last}}{{paramName}}{{/-last}}{{/pathParams}}{{/useSingleRequestParameter}}{{^useSingleRequestParameter}}arg.{{#pathParams}}{{#-last}}{{paramName}}{{/-last}}{{/pathParams}}{{/useSingleRequestParameter}} }]
-                    : ['UNKNOWN_ERROR'],
-            {{/pathParams.0}}
-            {{^pathParams.0}}
-            providesTags: (result) =>
-                result
-                    ? ['{{#tagTypes}}{{.}}{{/tagTypes}}']
-                    : ['UNKNOWN_ERROR'],
-            {{/pathParams.0}}
+            providesTags: ['{{#tagTypes}}{{.}}{{/tagTypes}}'],
             {{/addTagTypes}}
             {{/vendorExtensions.x-rtk-is-query}}
             {{#vendorExtensions.x-rtk-is-mutation}}
             {{#addTagTypes}}
-            {{#pathParams.0}}
-            invalidatesTags: (result, error, {{#useSingleRequestParameter}}{ {{#pathParams}}{{#-last}}{{paramName}}{{/-last}}{{/pathParams}} }{{/useSingleRequestParameter}}{{^useSingleRequestParameter}}arg{{/useSingleRequestParameter}}) =>
-                result
-                    ? [{ type: '{{#tagTypes}}{{.}}{{/tagTypes}}' as const, id: {{#useSingleRequestParameter}}{{#pathParams}}{{#-last}}{{paramName}}{{/-last}}{{/pathParams}}{{/useSingleRequestParameter}}{{^useSingleRequestParameter}}arg.{{#pathParams}}{{#-last}}{{paramName}}{{/-last}}{{/pathParams}}{{/useSingleRequestParameter}} }, '{{#tagTypes}}{{.}}{{/tagTypes}}']
-                    : [],
-            {{/pathParams.0}}
-            {{^pathParams.0}}
-            invalidatesTags: (result) =>
-                result
-                    ? ['{{#tagTypes}}{{.}}{{/tagTypes}}']
-                    : [],
-            {{/pathParams.0}}
+            invalidatesTags: ['{{#tagTypes}}{{.}}{{/tagTypes}}'],
             {{/addTagTypes}}
             {{/vendorExtensions.x-rtk-is-mutation}}
         }),
@@ -252,5 +240,4 @@ export enum {{operationIdCamelCase}}{{enumName}} {
 {{/operation}}
 {{/operations}}
 {{/hasEnums}}
-
 
