@@ -104,27 +104,3 @@ export function canConsumeForm(consumes: { contentType: string }[]): boolean {
     }
     return false;
 }
-
-/**
- * Standard BFF error response shape.
- * BFF always returns HTTP 200, but wraps server errors in this payload.
- */
-export interface BffErrorResponse {
-    type: string | null;
-    title: string | null;
-    status: number;
-    detail: string | null;
-    instance: string | null;
-    data: unknown | null;
-    metaData: unknown | null;
-}
-
-export function isBffError(response: unknown): response is BffErrorResponse {
-    return (
-        typeof response === 'object' &&
-        response !== null &&
-        'status' in response &&
-        typeof (response as any).status === 'number' &&
-        (response as any).status >= 400
-    );
-}

@@ -16,7 +16,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import * as runtime from '../runtime';
-import type { BffErrorResponse } from '../runtime';
 import { Configuration, DefaultConfig } from '../runtime';
 import type {
     Order,
@@ -39,7 +38,7 @@ export interface PlaceOrderRequest {
 }
 
 
-const storeApiBaseQuery: BaseQueryFn<FetchArgs, unknown, FetchBaseQueryError | BffErrorResponse> = async (args: FetchArgs, api: any, extraOptions: { configuration?: Configuration }) => {
+const storeApiBaseQuery: BaseQueryFn<FetchArgs, unknown, FetchBaseQueryError> = async (args: FetchArgs, api: any, extraOptions: { configuration?: Configuration }) => {
     const configuration = extraOptions?.configuration || DefaultConfig;
     const rawBaseQuery = fetchBaseQuery({
         baseUrl: configuration.basePath,
@@ -61,11 +60,7 @@ const storeApiBaseQuery: BaseQueryFn<FetchArgs, unknown, FetchBaseQueryError | B
             return headers;
         },
     });
-    const result = await rawBaseQuery(args, api, extraOptions);
-    if (result.data && runtime.isBffError(result.data)) {
-        return { error: result.data as BffErrorResponse };
-    }
-    return result;
+    return rawBaseQuery(args, api, extraOptions);
 };
 
 export const StoreApi = createApi({
